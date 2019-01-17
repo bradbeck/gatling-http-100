@@ -1,0 +1,3 @@
+simpleWebServer:
+  image: crccheck/hello-World
+  
