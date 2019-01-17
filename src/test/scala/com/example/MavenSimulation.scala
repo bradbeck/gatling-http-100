@@ -5,19 +5,23 @@ import java.io.File
 import io.gatling.core.Predef._
 import io.gatling.http.Predef._
 import org.testcontainers.containers.DockerComposeContainer
+import org.testcontainers.containers.wait.Wait
 
 class MavenSimulation
     extends Simulation
 {
-
   class GContainer(files: File*) extends DockerComposeContainer[GContainer](files:_*)
 
+  val nxrm: String = "nxrm_1"
+
+  val nxrmPort: Integer = 8081
+
   val alpine: GContainer = new GContainer(new File("src/test/resources/docker-compose.yml"))
-      .withExposedService("simpleWebServer_1", 8000)
+      .withExposedService(nxrm, nxrmPort, Wait.forListeningPort())
 
   alpine.start()
 
-  val url: String = s"http://${alpine.getServiceHost("simpleWebServer_1", 8000)}:${alpine.getServicePort("simpleWebServer_1", 8000)}/"
+  val url: String = s"http://${alpine.getServiceHost(nxrm, nxrmPort)}:${alpine.getServicePort(nxrm, nxrmPort)}/"
 
   val baseProtocol = http
       .disableWarmUp

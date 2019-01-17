@@ -1,2 +1,2 @@
-simpleWebServer:
-  image: crccheck/hello-world
+nxrm:
+  image: sonatype/nexus3
