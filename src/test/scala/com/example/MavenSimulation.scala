@@ -1,37 +1,71 @@
+/*
+ * Copyright (c) 2019-present Sonatype, Inc. All rights reserved.
+ *
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
+ */
 package com.example
 
-import java.io.File
-
 import io.gatling.core.Predef._
+import io.gatling.core.structure.ScenarioBuilder
 import io.gatling.http.Predef._
-import org.testcontainers.containers.DockerComposeContainer
-import org.testcontainers.containers.wait.Wait
+import io.gatling.http.protocol.HttpProtocolBuilder
+import org.testcontainers.containers.{BindMode, GenericContainer, Network}
 
 class MavenSimulation
     extends Simulation
 {
-  class GContainer(files: File*) extends DockerComposeContainer[GContainer](files:_*)
 
-  val nxrm: String = "nxrm_1"
+  class GContainer(image: String)
+      extends GenericContainer[GContainer](image)
+
+  val nxrm: String = "nxrm"
 
   val nxrmPort: Integer = 8081
 
-  val alpine: GContainer = new GContainer(new File("src/test/resources/docker-compose.yml"))
-      .withExposedService(nxrm, nxrmPort, Wait.forListeningPort())
+  val nginx: String = "nginx_1"
 
-  alpine.start()
+  val nginxPort: Integer = 80
 
-  val url: String = s"http://${alpine.getServiceHost(nxrm, nxrmPort)}:${alpine.getServicePort(nxrm, nxrmPort)}/"
+  val network: Network = Network.newNetwork()
 
-  val baseProtocol = http
+  val nxrmContainer: GContainer = new GContainer("sonatype/nexus3")
+      .withNetwork(network)
+      .withNetworkAliases("nxrm")
+      .withExposedPorts(nxrmPort)
+
+  nxrmContainer.start()
+
+    val nxrmUrl: String = s"http://${nxrmContainer.getContainerIpAddress}:${nxrmContainer.getMappedPort(nxrmPort)}/"
+
+    println(s"NXRM URL: $nxrmUrl")
+
+  val nginxContainer: GContainer = new GContainer("nginx:alpine")
+      .withNetwork(network)
+      .withExposedPorts(nginxPort)
+      .withClasspathResourceMapping("proxy.nginx", "/etc/nginx/conf.d/default.conf", BindMode.READ_ONLY)
+
+  nginxContainer.start()
+
+  val nginxUrl: String = s"http://${nginxContainer.getContainerIpAddress}:${nginxContainer.getMappedPort(nginxPort)}/"
+
+  println(s"NGINX URL: $nginxUrl")
+
+  val baseProtocol: HttpProtocolBuilder = http
       .disableWarmUp
       .userAgentHeader("Gatling")
       .connectionHeader("Close")
       .acceptEncodingHeader("gzip,deflate")
 
-  val scn = scenario("Simple GET")
+  val scn: ScenarioBuilder = scenario("Simple GET")
       .exec(http("get hello")
-          .get(url)
+          .get(nginxUrl)
           .check(
             status.is(200)
           )
@@ -48,6 +82,8 @@ class MavenSimulation
       .protocols(baseProtocol)
 
   after {
-    alpine.stop()
+    nxrmContainer.stop()
+    nginxContainer.stop()
+    network.close()
   }
 }
