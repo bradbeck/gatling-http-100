@@ -1,21 +1,23 @@
 package com.example
 
+import java.io.File
+
 import io.gatling.core.Predef._
 import io.gatling.http.Predef._
-import org.testcontainers.containers.GenericContainer
+import org.testcontainers.containers.DockerComposeContainer
 
 class MavenSimulation
     extends Simulation
 {
 
-  class GContainer(image: String)
-      extends GenericContainer[GContainer](image)
+  class GContainer(files: File*) extends DockerComposeContainer[GContainer](files:_*)
 
-  val alpine: GContainer = new GContainer("crccheck/hello-world").withExposedPorts(8000)
+  val alpine: GContainer = new GContainer(new File("src/test/resources/docker-compose.yml"))
+      .withExposedService("simpleWebServer_1", 8000)
 
   alpine.start()
 
-  val url: String = s"http://${alpine.getContainerIpAddress}:${alpine.getMappedPort(8000)}/"
+  val url: String = s"http://${alpine.getServiceHost("simpleWebServer_1", 8000)}:${alpine.getServicePort("simpleWebServer_1", 8000)}/"
 
   val baseProtocol = http
       .disableWarmUp
