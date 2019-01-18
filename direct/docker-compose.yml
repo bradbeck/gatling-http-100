@@ -1,0 +1,7 @@
+version: '3'
+services:
+  nxrm:
+    container_name: nxrm
+    image: sonatype/nexus3
+    ports:
+      - 8081:8081

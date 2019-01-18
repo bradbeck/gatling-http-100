@@ -55,7 +55,7 @@ object MavenClient
           http("PUT release pom")
               .put("${repositoryPath}/${groupPath}/${artifact}/${version}.${index}/${artifact}-${version}.${index}.pom")
               .headers(expect)
-              .body(ElFileBody("maven/sample-pom-release.xml"))
+              .body(ElFileBody("com/example/sample-pom-release.xml"))
               .basicAuth("${username}", "${password}")
               .check(status.is(201)),
           http("PUT release pom.sha1")
