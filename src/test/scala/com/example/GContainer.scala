@@ -12,23 +12,6 @@
  */
 package com.example
 
-import io.gatling.core.Predef._
+import org.testcontainers.containers.GenericContainer
 
-import scala.concurrent.duration._
-import scala.language.postfixOps
-
-class MavenManualSimulation
-    extends Simulation
-{
-  val nxrmUrl: String = s"http://localhost:8081"
-
-  println(s"NXRM URL: $nxrmUrl")
-
-  setUp(
-    MavenCommon.scenarioBuilder.inject(
-      rampUsers(4) during (15 seconds)
-    )
-  )
-      .protocols(MavenCommon.baseProtocol(nxrmUrl))
-      .assertions(global.successfulRequests.percent.gt(99))
-}
+class GContainer(image: String) extends GenericContainer[GContainer](image)

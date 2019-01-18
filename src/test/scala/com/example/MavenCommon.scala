@@ -12,23 +12,32 @@
  */
 package com.example
 
+import java.util.concurrent.LinkedBlockingDeque
+
 import io.gatling.core.Predef._
+import io.gatling.core.structure.ScenarioBuilder
+import io.gatling.http.Predef._
+import io.gatling.http.protocol.HttpProtocolBuilder
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class MavenManualSimulation
-    extends Simulation
+object MavenCommon
 {
-  val nxrmUrl: String = s"http://localhost:8081"
+  def baseProtocol(baseUrl: String): HttpProtocolBuilder = {
+    http
+    .baseUrl(baseUrl)
+    .inferHtmlResources()
+    .disableAutoReferer
+    .acceptHeader("*/*")
+    .userAgentHeader("Apache-Maven/3.5.0 (Java 1.8.0_121; Mac OS X 10.12.4)")
+  }
 
-  println(s"NXRM URL: $nxrmUrl")
+  def scenarioBuilder: ScenarioBuilder = {
+    val releaseQueue: LinkedBlockingDeque[Map[String, String]] = new LinkedBlockingDeque[Map[String, String]]
 
-  setUp(
-    MavenCommon.scenarioBuilder.inject(
-      rampUsers(4) during (15 seconds)
-    )
-  )
-      .protocols(MavenCommon.baseProtocol(nxrmUrl))
-      .assertions(global.successfulRequests.percent.gt(99))
+    scenario("Content Populator").during(30 seconds) {
+      exec(PublishReleases.release(releaseQueue))
+    }
+  }
 }

@@ -12,13 +12,8 @@
  */
 package com.example
 
-import java.util.concurrent.LinkedBlockingDeque
-
 import io.gatling.core.Predef._
-import io.gatling.core.structure.ScenarioBuilder
-import io.gatling.http.Predef._
-import io.gatling.http.protocol.HttpProtocolBuilder
-import org.testcontainers.containers.{BindMode, GenericContainer, Network}
+import org.testcontainers.containers.{BindMode, Network}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -26,9 +21,6 @@ import scala.language.postfixOps
 class MavenProxySimulation
     extends Simulation
 {
-  class GContainer(image: String)
-      extends GenericContainer[GContainer](image)
-
   val nxrm: String = "nxrm"
 
   val nxrmPort: Integer = 8081
@@ -46,14 +38,6 @@ class MavenProxySimulation
 
   nxrmContainer.start()
 
-  val nxrmUrl: String = s"http://${nxrmContainer.getContainerIpAddress}:${nxrmContainer.getMappedPort(nxrmPort)}"
-
-//  val nxrmUrl: String = s"http://localhost:8081"
-
-  println(s"NXRM URL: $nxrmUrl")
-
-//  val nginxConfig: String = "proxy.nginx"
-
   val nginxConfig: String = NginxConfig.generate(nxrmContainer.getMappedPort(nxrmPort)+1)
 
   println(s"nginx config: $nginxConfig")
@@ -70,26 +54,12 @@ class MavenProxySimulation
 
   println(s"NGINX URL: $nginxUrl")
 
-  val baseProtocol: HttpProtocolBuilder = http
-//      .baseUrl(nxrmUrl)
-      .baseUrl(nginxUrl)
-      .inferHtmlResources()
-      .disableAutoReferer
-      .acceptHeader("*/*")
-      .userAgentHeader("Apache-Maven/3.5.0 (Java 1.8.0_121; Mac OS X 10.12.4)")
-
-  val releaseQueue: LinkedBlockingDeque[Map[String, String]] = new LinkedBlockingDeque[Map[String, String]]
-
-  val scn: ScenarioBuilder = scenario("Content Populator").during(30 seconds) {
-    exec(PublishReleases.release(releaseQueue))
-  }
-
   setUp(
-    scn.inject(
+    MavenCommon.scenarioBuilder.inject(
       rampUsers(4) during (15 seconds)
     )
   )
-      .protocols(baseProtocol)
+      .protocols(MavenCommon.baseProtocol(nginxUrl))
       .assertions(global.successfulRequests.percent.gt(99))
 
   after {

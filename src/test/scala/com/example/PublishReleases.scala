@@ -15,6 +15,7 @@ package com.example
 import java.util.concurrent.BlockingDeque
 
 import io.gatling.core.Predef._
+import io.gatling.core.structure.ChainBuilder
 
 object PublishReleases
 {
@@ -22,7 +23,7 @@ object PublishReleases
 
   val gavs: Iterable[Map[String, String]] = FeedBuilder.buildReleaseFeed
 
-  def release(queue: BlockingDeque[Map[String, String]]) = {
+  def release(queue: BlockingDeque[Map[String, String]]): ChainBuilder = {
     feed(Stream.from(0).flatMap(i => gavs.map(_ + ("index" -> i))).toIterator)
         .exec(MavenClient.publishRelease(jarSize))
         .exec(session => {
