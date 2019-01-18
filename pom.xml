@@ -35,10 +35,9 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.bundle.plugin.version>4.1.0</maven.bundle.plugin.version>
-    <hazelcast.version>3.10</hazelcast.version>
     <junit.version>4.12</junit.version>
     <gatling.version>3.0.2</gatling.version>
-    <testcontainers.version>1.8.0</testcontainers.version>
+    <testcontainers.version>1.10.5</testcontainers.version>
   </properties>
 
   <scm>
@@ -52,6 +51,16 @@
       <groupId>io.gatling.highcharts</groupId>
       <artifactId>gatling-charts-highcharts</artifactId>
       <version>3.0.2</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>1.10</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.4</version>
     </dependency>
     <dependency>
       <groupId>com.mashape.unirest</groupId>

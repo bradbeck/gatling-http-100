@@ -21,7 +21,6 @@ import org.testcontainers.containers.{BindMode, GenericContainer, Network}
 class MavenSimulation
     extends Simulation
 {
-
   class GContainer(image: String)
       extends GenericContainer[GContainer](image)
 
@@ -29,7 +28,7 @@ class MavenSimulation
 
   val nxrmPort: Integer = 8081
 
-  val nginx: String = "nginx_1"
+  val nginx: String = "nginx"
 
   val nginxPort: Integer = 80
 
@@ -37,35 +36,44 @@ class MavenSimulation
 
   val nxrmContainer: GContainer = new GContainer("sonatype/nexus3")
       .withNetwork(network)
-      .withNetworkAliases("nxrm")
+      .withNetworkAliases(nxrm)
       .withExposedPorts(nxrmPort)
 
   nxrmContainer.start()
 
-    val nxrmUrl: String = s"http://${nxrmContainer.getContainerIpAddress}:${nxrmContainer.getMappedPort(nxrmPort)}/"
+  val nxrmUrl: String = s"http://${nxrmContainer.getContainerIpAddress}:${nxrmContainer.getMappedPort(nxrmPort)}"
 
-    println(s"NXRM URL: $nxrmUrl")
+  println(s"NXRM URL: $nxrmUrl")
+
+//  val nginxConfig: String = "proxy.nginx"
+
+  val nginxConfig: String = NginxConfig.generate(nxrmContainer.getMappedPort(nxrmPort)+1)
+
+  println(s"nginx config: $nginxConfig")
 
   val nginxContainer: GContainer = new GContainer("nginx:alpine")
       .withNetwork(network)
+      .withNetworkAliases(nginx)
       .withExposedPorts(nginxPort)
-      .withClasspathResourceMapping("proxy.nginx", "/etc/nginx/conf.d/default.conf", BindMode.READ_ONLY)
+      .withClasspathResourceMapping(nginxConfig, "/etc/nginx/conf.d/default.conf", BindMode.READ_ONLY)
 
   nginxContainer.start()
 
-  val nginxUrl: String = s"http://${nginxContainer.getContainerIpAddress}:${nginxContainer.getMappedPort(nginxPort)}/"
+  val nginxUrl: String = s"http://${nginxContainer.getContainerIpAddress}:${nginxContainer.getMappedPort(nginxPort)}"
 
   println(s"NGINX URL: $nginxUrl")
 
   val baseProtocol: HttpProtocolBuilder = http
-      .disableWarmUp
-      .userAgentHeader("Gatling")
-      .connectionHeader("Close")
-      .acceptEncodingHeader("gzip,deflate")
+//      .baseUrl(nxrmUrl)
+      .baseUrl(nginxUrl)
+      .inferHtmlResources()
+      .disableAutoReferer
+      .acceptHeader("*/*")
+      .userAgentHeader("Apache-Maven/3.5.0 (Java 1.8.0_121; Mac OS X 10.12.4)")
 
   val scn: ScenarioBuilder = scenario("Simple GET")
       .exec(http("get hello")
-          .get(nginxUrl)
+          .get("")
           .check(
             status.is(200)
           )
