@@ -19,7 +19,7 @@ import org.testcontainers.containers.GenericContainer;
 
 import static org.junit.Assert.assertEquals;
 
-public class SimpleGet {
+public class SimpleGetTest {
   @ClassRule
   public static final GenericContainer alpine = new GenericContainer("alpine:3.2")
       .withExposedPorts(80)
