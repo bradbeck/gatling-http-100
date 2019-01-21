@@ -12,6 +12,7 @@
     See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
 
 -->
+[![DepShield Badge](https://depshield.sonatype.org/badges/bradbeck/gatling-http-100/depshield.svg)](https://depshield.github.io)
 # Table of Contents
 * [Description](#description)
 * [NXRM3 Direct](#nxrm3-direct)
